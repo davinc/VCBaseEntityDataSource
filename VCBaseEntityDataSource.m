@@ -24,7 +24,11 @@
 
 #import "VCBaseEntityDataSource.h"
 
-#import "ETDataManager.h"
+#if __has_feature(objc_arc)
+#define RELEASE_SAFELY(s) s = nil
+#else
+#define RELEASE_SAFELY(s) [s release], s = nil
+#endif
 
 @implementation VCBaseEntityDataSource
 
@@ -36,20 +40,38 @@
 
 - (id)initWithEntityName:(NSString *)anEntityName {
     self = [super init];
-    if (self) {
+    if (self) { 
 		_entityName = [anEntityName retain];
     }
     return self;
 }
 
 - (void)dealloc {
-	[_fetchedResultsController release], _fetchedResultsController = nil;
-    [_entityName release], _entityName = nil;
+	_fetchedResultsController.delegate = self;
+	RELEASE_SAFELY(_fetchedResultsController);
+	RELEASE_SAFELY(_entityName);
     [super dealloc];
 }
 
 #pragma mark - Private Methods
 
+- (void)saveManagedObjectContext:(NSManagedObjectContext *)managedObjectContext
+{
+	if (managedObjectContext == nil) {
+		return;
+	}
+
+    [managedObjectContext performBlockAndWait:^{
+        NSError *error = nil;
+        BOOL saved = [managedObjectContext save:&error];
+        if (!saved) {
+            // do some real error handling
+            DebugLog(@"Could not save new context due to %@", error);
+        }
+    }];
+
+	[self saveManagedObjectContext:managedObjectContext.parentContext];
+}
 
 
 #pragma mark - Public Methods
@@ -57,18 +79,21 @@
 - (void)fetchWithPredicate:(NSPredicate *)predicate
 		   sortDescriptors:(NSArray *)sortDescriptors
 			sectionKeyPath:(NSString *)sectionKeyPath
+	  managedObjectContext:(NSManagedObjectContext *)managedObjectContext
 {
-	NSManagedObjectContext *managedObjectContext = [[ETDataManager sharedInstance] masterManagedObjectContext];
-	
 	NSFetchRequest *fetchRequest = [[NSFetchRequest alloc] initWithEntityName:self.entityName];
 	[fetchRequest setResultType:NSManagedObjectResultType];
-	[fetchRequest setPredicate:predicate];
-	[fetchRequest setSortDescriptors:sortDescriptors];
+	if (predicate) {
+		[fetchRequest setPredicate:predicate];
+	}
+	if (sortDescriptors) {
+		[fetchRequest setSortDescriptors:sortDescriptors];
+	}
 	[fetchRequest setFetchBatchSize:20];
-	
+
 	if (_fetchedResultsController) {
 		DebugLog(@"This should not happen. ##############");
-		[_fetchedResultsController release], _fetchedResultsController = nil;
+		RELEASE_SAFELY(_fetchedResultsController);
 	}
 	_fetchedResultsController = [[NSFetchedResultsController alloc] initWithFetchRequest:fetchRequest
 																	managedObjectContext:managedObjectContext
@@ -76,7 +101,7 @@
 																			   cacheName:nil];
 	_fetchedResultsController.delegate = self;
 
-	[fetchRequest release], fetchRequest = nil;
+	RELEASE_SAFELY(fetchRequest);
 }
 
 - (id)objectAtIndexPath:(NSIndexPath *)indexPath
@@ -101,12 +126,17 @@
 	NSError *error = nil;
 	if (![_fetchedResultsController performFetch:&error]) {
 		DebugLog(@"%@", [error localizedDescription]);
-		abort();
+		//abort();
 	}
 
 	if ([self.delegate respondsToSelector:@selector(didFinishLoadingDataSource:)]) {
 		[self.delegate didFinishLoadingDataSource:self];
 	}
+}
+
+- (void)save
+{
+	[self saveManagedObjectContext:self.fetchedResultsController.managedObjectContext];
 }
 
 #pragma mark - NSFetchedResultsControllerDelegate
