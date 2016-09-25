@@ -63,7 +63,7 @@
         BOOL saved = [managedObjectContext save:&error];
         if (!saved) {
             // do some real error handling
-            DebugLog(@"Could not save new context due to %@", error);
+			NSAssert(FALSE, @"Could not save new context due to %@", error);
         }
     }];
 
@@ -89,16 +89,14 @@
 	[fetchRequest setFetchBatchSize:20];
 
 	if (_fetchedResultsController) {
-		DebugLog(@"This should not happen. ##############");
-		RELEASE_SAFELY(_fetchedResultsController);
+		NSAssert(FALSE, @"This should not happen.");
+		_fetchedResultsController = nil;
 	}
 	_fetchedResultsController = [[NSFetchedResultsController alloc] initWithFetchRequest:fetchRequest
 																	managedObjectContext:managedObjectContext
 																	  sectionNameKeyPath:sectionKeyPath
 																			   cacheName:nil];
 	_fetchedResultsController.delegate = self;
-
-	RELEASE_SAFELY(fetchRequest);
 }
 
 - (id)objectAtIndexPath:(NSIndexPath *)indexPath
@@ -122,8 +120,7 @@
 {
 	NSError *error = nil;
 	if (![_fetchedResultsController performFetch:&error]) {
-		DebugLog(@"%@", [error localizedDescription]);
-		//abort();
+		NSAssert(FALSE, @"%@", [error localizedDescription]);
 	}
 
 	if ([self.delegate respondsToSelector:@selector(didFinishLoadingDataSource:)]) {
