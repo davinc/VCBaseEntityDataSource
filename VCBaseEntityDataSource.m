@@ -1,6 +1,6 @@
 //
+//  VCBaseEntityDataSource.m
 //  VCBaseEntityDataSource
-//  Demo
 //
 //  Copyright (C) 2011 by Vinay Chavan
 //
@@ -24,11 +24,11 @@
 
 #import "VCBaseEntityDataSource.h"
 
-#if __has_feature(objc_arc)
-#define RELEASE_SAFELY(s) s = nil
-#else
-#define RELEASE_SAFELY(s) [s release], s = nil
-#endif
+@interface VCBaseEntityDataSource ()
+@property (strong, nonatomic) NSString *entityName;
+
+@end
+
 
 @implementation VCBaseEntityDataSource
 
@@ -40,17 +40,14 @@
 
 - (id)initWithEntityName:(NSString *)anEntityName {
     self = [super init];
-    if (self) { 
-		_entityName = [anEntityName retain];
+    if (self) {
+		self.entityName = anEntityName;
     }
     return self;
 }
 
 - (void)dealloc {
 	_fetchedResultsController.delegate = self;
-	RELEASE_SAFELY(_fetchedResultsController);
-	RELEASE_SAFELY(_entityName);
-    [super dealloc];
 }
 
 #pragma mark - Private Methods
@@ -157,56 +154,23 @@
 
 - (void)controller:(NSFetchedResultsController *)controller didChangeObject:(id)anObject atIndexPath:(NSIndexPath *)indexPath forChangeType:(NSFetchedResultsChangeType)type newIndexPath:(NSIndexPath *)newIndexPath
 {
-	switch (type) {
-		case NSFetchedResultsChangeInsert:
-			if ([self.delegate respondsToSelector:@selector(dataSource:didInsertObject:atIndexPath:)]) {
-				[self.delegate dataSource:self didInsertObject:anObject atIndexPath:newIndexPath];
-			}
-			break;
-		case NSFetchedResultsChangeDelete:
-			if ([self.delegate respondsToSelector:@selector(dataSource:didDeleteObject:atIndexPath:)]) {
-				[self.delegate dataSource:self didDeleteObject:anObject atIndexPath:indexPath];
-			}
-			break;
-		case NSFetchedResultsChangeUpdate:
-			if ([self.delegate respondsToSelector:@selector(dataSource:didUpdateObject:atIndexPath:)]) {
-				[self.delegate dataSource:self didUpdateObject:anObject atIndexPath:indexPath];
-			}
-			break;
-		case NSFetchedResultsChangeMove:
-			if ([self.delegate respondsToSelector:@selector(dataSource:didMoveObject:fromIndexPath:toIndexPath:)]) {
-				[self.delegate dataSource:self didMoveObject:anObject fromIndexPath:indexPath toIndexPath:newIndexPath];
-			}
-			break;
-			
-		default:
-			DebugLog(@"WTF");
-			break;
+	if ([self.delegate respondsToSelector:@selector(dataSource:didChangeObject:atIndexPath:forChangeType:newIndexPath:)]) {
+		[self.delegate dataSource:self
+				  didChangeObject:anObject
+					  atIndexPath:indexPath
+					forChangeType:type
+					 newIndexPath:newIndexPath];
 	}
 }
 
 - (void)controller:(NSFetchedResultsController *)controller didChangeSection:(id <NSFetchedResultsSectionInfo>)sectionInfo atIndex:(NSUInteger)sectionIndex forChangeType:(NSFetchedResultsChangeType)type
 {
-	switch(type) {
-        case NSFetchedResultsChangeInsert:
-			if ([self.delegate respondsToSelector:@selector(dataSource:didInsertSectionAtIndex:)]) {
-				[self.delegate dataSource:self didInsertSectionAtIndex:sectionIndex];
-			}
-            break;
-        case NSFetchedResultsChangeDelete:
-			if ([self.delegate respondsToSelector:@selector(dataSource:didDeleteSectionAtIndex:)]) {
-				[self.delegate dataSource:self didDeleteSectionAtIndex:sectionIndex];
-			}
-            break;
-        case NSFetchedResultsChangeUpdate:
-            break;
-        case NSFetchedResultsChangeMove:
-            break;
-
-        default:
-			DebugLog(@"WTF");
-			break;
-    }
+	if ([self.delegate respondsToSelector:@selector(dataSource:didChangeSection:atIndex:forChangeType:)]) {
+		[self.delegate dataSource:self
+				 didChangeSection:sectionInfo
+						  atIndex:sectionIndex
+					forChangeType:type];
+	}
 }
 
 @end

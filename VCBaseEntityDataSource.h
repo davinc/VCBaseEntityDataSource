@@ -1,6 +1,6 @@
 //
+//  VCBaseEntityDataSource.h
 //  VCBaseEntityDataSource
-//  Demo
 //
 //  Copyright (C) 2011 by Vinay Chavan
 //
@@ -23,6 +23,7 @@
 //  THE SOFTWARE.
 
 #import <UIKit/UIKit.h>
+#import <CoreData/CoreData.h>
 
 @protocol VCBaseDataSourceDelegate;
 
@@ -84,14 +85,8 @@
 
 // Will be called by me!, though you can override at your own risk
 @optional
-- (void)dataSource:(VCBaseEntityDataSource *)aDataSource didInsertObject:(id)anObject atIndexPath:(NSIndexPath *)indexPath;
-- (void)dataSource:(VCBaseEntityDataSource *)aDataSource didDeleteObject:(id)anObject atIndexPath:(NSIndexPath *)indexPath;
-- (void)dataSource:(VCBaseEntityDataSource *)aDataSource didUpdateObject:(id)anObject atIndexPath:(NSIndexPath *)indexPath;
-- (void)dataSource:(VCBaseEntityDataSource *)aDataSource didMoveObject:(id)anObject fromIndexPath:(NSIndexPath *)oldIndexPath toIndexPath:(NSIndexPath *)newIndexPath;
+- (void)dataSource:(VCBaseEntityDataSource *)dataSource didChangeObject:(id)anObject atIndexPath:(NSIndexPath *)indexPath forChangeType:(NSFetchedResultsChangeType)type newIndexPath:(NSIndexPath *)newIndexPath;
 
-- (void)dataSource:(VCBaseEntityDataSource *)aDataSource didInsertSectionAtIndex:(NSInteger)section;
-- (void)dataSource:(VCBaseEntityDataSource *)aDataSource didDeleteSectionAtIndex:(NSInteger)section;
-- (void)dataSource:(VCBaseEntityDataSource *)aDataSource didUpdateSectionAtIndex:(NSInteger)section;
-- (void)dataSource:(VCBaseEntityDataSource *)aDataSource didMoveSectionFromIndex:(NSInteger)section toIndex:(NSInteger)newIndex;
+- (void)dataSource:(VCBaseEntityDataSource *)dataSource didChangeSection:(id <NSFetchedResultsSectionInfo>)sectionInfo atIndex:(NSUInteger)sectionIndex forChangeType:(NSFetchedResultsChangeType)type;
 
 @end
