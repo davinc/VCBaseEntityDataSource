@@ -47,7 +47,6 @@
  * @param predicate Predicate to be applied for fetch request
  * @param sortDescriptors Sort descriptors to be applied for fetch request
  * @param managedObjectContext Managed Object Context to be used for fetch request
- * @return linear array of objects
  */
 - (void)fetchWithPredicate:(NSPredicate *)predicate
 		   sortDescriptors:(NSArray *)sortDescriptors
